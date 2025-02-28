@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { hentInitiativById, oppdaterInitiativ, oppdaterInitiativStatus } from '../services/initiativService';
+import BusinessCanvas from '../components/BusinessCanvas';
 
 interface Initiativ {
   _id: string;
@@ -55,6 +56,7 @@ const InitiativDetaljer: React.FC = () => {
   const [redigertInitiativ, setRedigertInitiativ] = useState<Partial<Initiativ>>({});
   const [lagrer, setLagrer] = useState<boolean>(false);
   const [suksessmelding, setSuksessmelding] = useState<string | null>(null);
+  const [viserBusinessCanvas, setViserBusinessCanvas] = useState<boolean>(false);
 
   useEffect(() => {
     const lastInitiativ = async () => {
@@ -219,12 +221,20 @@ const InitiativDetaljer: React.FC = () => {
           </h1>
           <p className="text-gray-500">{initiativ.initiativId}</p>
         </div>
-        <button
-          onClick={() => navigate('/')}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded"
-        >
-          Tilbake til oversikt
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setViserBusinessCanvas(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+          >
+            Forretningskanvas
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded"
+          >
+            Tilbake til oversikt
+          </button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -621,6 +631,13 @@ const InitiativDetaljer: React.FC = () => {
             </table>
           </div>
         </div>
+      )}
+      
+      {viserBusinessCanvas && initiativ && (
+        <BusinessCanvas 
+          initiativ={initiativ} 
+          onClose={() => setViserBusinessCanvas(false)} 
+        />
       )}
     </div>
   );
