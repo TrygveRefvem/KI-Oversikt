@@ -1,0 +1,16 @@
+{
+  "name": "ki-oversikt",
+  "version": "1.0.0",
+  "description": "Webapplikasjon for oppretting og oppfølging av KI-initiativer",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "cd frontend && npm start",
+    "start": "echo \"For å starte applikasjonen, kjør 'npm run start:backend' i ett terminalvindu og 'npm run start:frontend' i et annet.\"",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "test": "npm run test:backend && npm run test:frontend"
+  },
+  "author": "",
+  "license": "ISC"
+} 
