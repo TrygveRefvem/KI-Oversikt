@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: kioversikt-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=ki-oversikt
+    networks:
+      - kioversikt-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kioversikt-backend
+    ports:
+      - "5001:80"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/ki-oversikt
+      - NODE_ENV=production
+      - PORT=80
+      # Legg til din OpenAI API-nøkkel her for lokal testing
+      # - OPENAI_API_KEY=din_api_nøkkel
+    depends_on:
+      - mongodb
+    networks:
+      - kioversikt-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kioversikt-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - API_URL=http://backend:80
+    depends_on:
+      - backend
+    networks:
+      - kioversikt-network
+
+networks:
+  kioversikt-network:
+    driver: bridge
+
+volumes:
+  mongodb_data: 

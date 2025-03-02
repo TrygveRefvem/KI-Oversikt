@@ -4,7 +4,7 @@ const openaiService = require('../services/openaiService');
 // Hent alle initiativer
 exports.getAllInitiativer = async (req, res, next) => {
   try {
-    const initiativer = await Initiativ.find().sort({ opprettetDato: -1 });
+    const initiativer = await Initiativ.find();
     res.status(200).json({
       success: true,
       count: initiativer.length,

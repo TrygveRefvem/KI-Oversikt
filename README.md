@@ -8,6 +8,8 @@ En interaktiv webapplikasjon for oppretting og oppfølging av KI-initiativer.
 - Strukturert datalagring og visning
 - Statusbasert visuell oppdatering
 - Integrasjon med OpenAI GPT-modeller
+- Business Canvas for visualisering av forretningsmodell
+- PDF-eksport av Business Canvas
 
 ## Teknisk Stack
 
@@ -15,6 +17,8 @@ En interaktiv webapplikasjon for oppretting og oppfølging av KI-initiativer.
 - **Backend**: Node.js, Express
 - **Database**: MongoDB
 - **AI-integrasjon**: OpenAI API
+- **Containerisering**: Docker
+- **Cloud**: Azure App Service, Azure Cosmos DB
 
 ## Installasjon
 
@@ -68,12 +72,15 @@ cd frontend
 npm start
 ```
 
-### Metode 2: Bruk informasjonskommandoen
+### Metode 2: Bruk Docker Compose
 
+```bash
+# Bygg og start alle tjenester
+docker-compose up --build
+
+# Kjør i bakgrunnen
+docker-compose up -d
 ```
-npm start
-```
-Dette vil vise instruksjoner for hvordan du starter applikasjonen.
 
 ## Testing
 
@@ -90,25 +97,23 @@ npm run test:backend
 npm run test:frontend
 ```
 
-### Testdekning
+## Deployment til Azure
 
-- **Backend-tester**: API-endepunkter, modellvalidering, OpenAI-integrasjon
-- **Frontend-tester**: Komponenttesting, brukergrensesnitt, API-integrasjon
+Prosjektet er konfigurert for deployment til Azure ved hjelp av Docker-containere. Se følgende filer for detaljer:
 
-### Testmiljø
+- `azure-deployment-plan.md` - Detaljert plan for Azure-deployment
+- `azure-cli-commands.md` - Azure CLI-kommandoer for manuelt oppsett
+- `.github/workflows/azure-deploy.yml` - GitHub Actions workflow for automatisk deployment
 
-Testene kjører i et isolert miljø med følgende egenskaper:
-- In-memory MongoDB for databasetester
-- Mock av OpenAI API for AI-integrasjonstester
-- Jest og React Testing Library for frontend-tester
-- Supertest for API-testing
+### Kort oversikt over Azure-deployment
 
-### Feilsøking
+1. Bygg Docker-images for frontend og backend
+2. Push images til Azure Container Registry
+3. Deploy til Azure App Service
+4. Konfigurer Azure Cosmos DB for MongoDB API
+5. Sett opp miljøvariabler og sikkerhet
 
-Hvis du opplever problemer med testene, sjekk følgende:
-1. Sørg for at alle avhengigheter er installert (`npm run install:all`)
-2. Sjekk at `.env.test`-filen eksisterer i både backend- og frontend-mappene
-3. For OpenAI-relaterte tester, sørg for at `NODE_ENV=test` er satt i miljøvariablene
+For detaljerte instruksjoner, se `azure-deployment-plan.md`.
 
 ## Prosjektstruktur
 
@@ -119,15 +124,27 @@ ki-oversikt/
 │   ├── models/        # MongoDB-modeller
 │   ├── routes/        # API-ruter
 │   ├── services/      # Tjenester (inkl. OpenAI-integrasjon)
+│   ├── Dockerfile     # Docker-konfigurasjon for backend
 │   └── server.js      # Hovedapplikasjonsfil
 │
 ├── frontend/          # React frontend
 │   ├── public/        # Statiske filer
-│   └── src/           # Kildekode
-│       ├── components/# React-komponenter
-│       ├── pages/     # Sidekomponenter
-│       ├── services/  # API-tjenester
-│       └── App.tsx    # Hovedapplikasjonskomponent
+│   ├── src/           # Kildekode
+│   │   ├── components/# React-komponenter
+│   │   ├── pages/     # Sidekomponenter
+│   │   ├── services/  # API-tjenester
+│   │   └── App.tsx    # Hovedapplikasjonskomponent
+│   ├── Dockerfile     # Docker-konfigurasjon for frontend
+│   └── nginx.conf     # Nginx-konfigurasjon for produksjon
 │
+├── .github/           # GitHub Actions workflows
+├── docker-compose.yml # Docker Compose-konfigurasjon
+├── azure-deployment-plan.md # Plan for Azure-deployment
+├── azure-cli-commands.md    # Azure CLI-kommandoer
 └── README.md          # Prosjektdokumentasjon
-``` 
+```
+
+## Versjonering
+
+- **Versjon 1.0** - Grunnleggende funksjonalitet med initiativoversikt og detaljer
+- **Versjon 1.1** - Lagt til Business Canvas og PDF-eksport 
