@@ -1,5 +1,5 @@
 const Initiativ = require('../models/Initiativ');
-const openaiService = require('../services/openaiService');
+const { analyzeText } = require('../services/openaiService');
 
 // Hent alle initiativer
 exports.getAllInitiativer = async (req, res, next) => {
@@ -96,6 +96,12 @@ exports.deleteInitiativ = async (req, res, next) => {
   }
 };
 
+// Generer unik initiativ-ID
+async function generateInitiativId() {
+  const count = await Initiativ.countDocuments();
+  return `KI-${(count + 1).toString().padStart(3, '0')}`;
+}
+
 // Dialogbasert oppretting av initiativ
 exports.createInitiativFromDialog = async (req, res, next) => {
   try {
@@ -107,27 +113,40 @@ exports.createInitiativFromDialog = async (req, res, next) => {
         message: 'Meldingsinnhold er påkrevd'
       });
     }
+
+    // Analyser teksten med OpenAI
+    let analysertData;
+    try {
+      analysertData = await analyzeText(message);
+    } catch (error) {
+      console.error('Feil ved analyse av tekst:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Kunne ikke analysere teksten. Vennligst prøv igjen.'
+      });
+    }
     
-    // Bruk OpenAI for å tolke brukerens melding og generere strukturert data
-    const initiativData = await openaiService.processInitiativDialog(message);
-    
-    // Generer en unik initiativId
-    const count = await Initiativ.countDocuments();
-    const initiativId = `KI-${(count + 1).toString().padStart(3, '0')}`;
-    
-    // Opprett initiativ basert på strukturert data
-    const initiativ = await Initiativ.create({
-      ...initiativData,
-      initiativId
+    // Opprett et nytt initiativ med den analyserte dataen
+    const initiativ = new Initiativ({
+      initiativId: await generateInitiativId(),
+      ...analysertData,
+      startDato: new Date(),
+      handlinger: [],
+      vedlegg: []
     });
-    
+
+    await initiativ.save();
+
     res.status(201).json({
       success: true,
-      data: initiativ,
-      aiResponse: initiativData.aiResponse || 'Initiativ opprettet basert på dialog'
+      data: initiativ
     });
   } catch (error) {
-    next(error);
+    console.error('Feil ved oppretting av initiativ:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Kunne ikke opprette initiativet. Vennligst prøv igjen.'
+    });
   }
 };
 

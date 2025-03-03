@@ -1,8 +1,9 @@
 const OpenAI = require('openai');
 require('dotenv').config();
 
-// Initialiser OpenAI-klienten
-let openai;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 // Sjekk om vi er i testmiljø
 if (process.env.NODE_ENV === 'test') {
@@ -54,11 +55,6 @@ if (process.env.NODE_ENV === 'test') {
       }
     }
   };
-} else {
-  // I produksjon bruker vi den ekte OpenAI-klienten
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
 }
 
 // Opprett OpenAI-klient
@@ -472,4 +468,47 @@ function isValidDateString(dateString) {
   if (isNaN(timestamp)) return false;
   
   return date.toISOString().split('T')[0] === dateString;
-} 
+}
+
+async function analyzeText(text) {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: `Du er en assistent som skal analysere tekst og trekke ut relevant informasjon for et KI-initiativ. 
+          Returner et JSON-objekt med følgende felter:
+          - tittel: En kort, beskrivende tittel for initiativet
+          - beskrivelse: En detaljert beskrivelse av initiativet
+          - maal: Konkrete mål for initiativet
+          - status: En av følgende: 'Ide', 'Under vurdering', 'Planlegging', 'Utvikling', 'Testing', 'Implementert', 'Avsluttet', 'Kansellert'
+          - ansvarlig: Navnet på ansvarlig person hvis nevnt, ellers 'Ikke spesifisert'
+          - prioritet: 'Høy', 'Medium' eller 'Lav' basert på kontekst og viktighet`
+        },
+        {
+          role: "user",
+          content: text
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    const response = completion.choices[0].message.content;
+    console.log('OpenAI response:', response);
+    
+    try {
+      return JSON.parse(response);
+    } catch (parseError) {
+      console.error('Feil ved parsing av OpenAI-respons:', parseError);
+      throw new Error('Kunne ikke tolke AI-responsen');
+    }
+  } catch (error) {
+    console.error('Feil ved analyse av tekst:', error);
+    throw error;
+  }
+}
+
+module.exports = {
+  analyzeText
+}; 
