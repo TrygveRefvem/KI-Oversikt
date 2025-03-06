@@ -1,4 +1,4 @@
-# KI-oversikt
+# KI-Oversikt
 
 En moderne webapplikasjon for å håndtere og oversikt over KI-initiativer. Applikasjonen bruker Azure-tjenester og OpenAI for å forenkle prosessen med å opprette og administrere KI-prosjekter.
 
@@ -34,8 +34,8 @@ En moderne webapplikasjon for å håndtere og oversikt over KI-initiativer. Appl
 
 1. Klon repositoriet:
 ```bash
-git clone https://github.com/ditt-brukernavn/kioversikt.git
-cd kioversikt
+git clone https://github.com/trygverefvem/KI-Oversikt.git
+cd KI-Oversikt
 ```
 
 2. Installer avhengigheter:
@@ -115,6 +115,6 @@ Dette prosjektet er lisensiert under MIT-lisensen - se [LICENSE](LICENSE) filen 
 
 ## Kontakt
 
-Ditt Navn - [@ditttwitter](https://twitter.com/ditttwitter) - email@example.com
+Trygve Refvem - [@trygverefvem](https://github.com/trygverefvem)
 
-Prosjekt Link: [https://github.com/ditt-brukernavn/kioversikt](https://github.com/ditt-brukernavn/kioversikt) 
+Prosjekt Link: [https://github.com/trygverefvem/KI-Oversikt](https://github.com/trygverefvem/KI-Oversikt) 
