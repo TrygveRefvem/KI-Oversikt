@@ -3,3 +3,7 @@ deployments/
 node_modules/
 .env
 *.zip
+
+*.xlsx
+*.xls
+*.csv
