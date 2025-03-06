@@ -1,150 +1,120 @@
-# KI-Oversikt
+# KI-oversikt
 
-En interaktiv webapplikasjon for oppretting og oppfølging av KI-initiativer.
+En moderne webapplikasjon for å håndtere og oversikt over KI-initiativer. Applikasjonen bruker Azure-tjenester og OpenAI for å forenkle prosessen med å opprette og administrere KI-prosjekter.
 
-## Funksjonalitet
+## Funksjoner
 
-- Naturlig språk og dialog for oppretting av initiativer
-- Strukturert datalagring og visning
-- Statusbasert visuell oppdatering
-- Integrasjon med OpenAI GPT-modeller
-- Business Canvas for visualisering av forretningsmodell
-- PDF-eksport av Business Canvas
+- 🤖 Automatisk generering av KI-initiativer fra naturlig språk
+- 📊 Oversiktlig dashboard for alle KI-prosjekter
+- 🔄 Interaktiv dialog for å forbedre initiativer
+- 📝 Detaljert visning av hvert initiativ
+- 🔍 Søk og filtrering av initiativer
+- 📈 Statusoppdateringer og fremgang
+- 🔐 Sikker autentisering og autorisering
 
-## Teknisk Stack
+## Teknologier
 
-- **Frontend**: React, TypeScript, Tailwind CSS
-- **Backend**: Node.js, Express
-- **Database**: MongoDB
-- **AI-integrasjon**: OpenAI API
-- **Containerisering**: Docker
-- **Cloud**: Azure App Service, Azure Cosmos DB
+- Frontend: React med TypeScript
+- Backend: Node.js med Express
+- Database: MongoDB
+- Cloud: Azure (App Service, Key Vault, Storage)
+- AI: OpenAI GPT-3.5
+- Testing: Jest
 
 ## Installasjon
 
 ### Forutsetninger
-- Node.js (v16 eller nyere)
+
+- Node.js (v18 eller nyere)
 - MongoDB
+- Azure-konto
 - OpenAI API-nøkkel
 
-### Installasjon
+### Lokal utvikling
 
-1. Klon repositoriet
-2. Installer avhengigheter:
-   ```
-   # Installer alle avhengigheter (root, backend og frontend)
-   npm run install:all
-   
-   # Eller installer hver for seg:
-   # Installer backend-avhengigheter
-   cd backend
-   npm install
-
-   # Installer frontend-avhengigheter
-   cd ../frontend
-   npm install
-   ```
-3. Opprett en `.env`-fil i backend-mappen med følgende variabler:
-   ```
-   PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/ki-oversikt
-   OPENAI_API_KEY=din_api_nøkkel
-   NODE_ENV=development
-   ```
-
-## Kjøre applikasjonen
-
-Du kan starte applikasjonen på to måter:
-
-### Metode 1: Start backend og frontend separat (anbefalt for utvikling)
-
+1. Klon repositoriet:
+```bash
+git clone https://github.com/ditt-brukernavn/kioversikt.git
+cd kioversikt
 ```
-# Start backend (i ett terminalvindu)
-npm run start:backend
-# eller
+
+2. Installer avhengigheter:
+```bash
+# Installer backend-avhengigheter
+cd backend
+npm install
+
+# Installer frontend-avhengigheter
+cd ../frontend
+npm install
+```
+
+3. Opprett `.env`-filer:
+
+Backend (`.env`):
+```env
+MONGODB_URI=din_mongodb_uri
+OPENAI_API_KEY=din_openai_api_nøkkel
+AZURE_TENANT_ID=din_azure_tenant_id
+AZURE_CLIENT_ID=din_azure_client_id
+AZURE_CLIENT_SECRET=din_azure_client_secret
+```
+
+Frontend (`.env`):
+```env
+REACT_APP_API_URL=http://localhost:3001
+```
+
+4. Start utviklingsserverne:
+
+Backend:
+```bash
 cd backend
 npm run dev
+```
 
-# Start frontend (i et annet terminalvindu)
-npm run start:frontend
-# eller
+Frontend:
+```bash
 cd frontend
 npm start
 ```
 
-### Metode 2: Bruk Docker Compose
-
-```bash
-# Bygg og start alle tjenester
-docker-compose up --build
-
-# Kjør i bakgrunnen
-docker-compose up -d
-```
-
 ## Testing
 
-For å kjøre tester:
+Kjør tester for både frontend og backend:
 
-```
-# Kjør alle tester (både backend og frontend)
+```bash
+# Backend-tester
+cd backend
 npm test
 
-# Kjør bare backend-tester
-npm run test:backend
-
-# Kjør bare frontend-tester
-npm run test:frontend
+# Frontend-tester
+cd frontend
+npm test
 ```
 
-## Deployment til Azure
+## Deployment
 
-Prosjektet er konfigurert for deployment til Azure ved hjelp av Docker-containere. Se følgende filer for detaljer:
+Applikasjonen er konfigurert for deployment til Azure:
 
-- `azure-deployment-plan.md` - Detaljert plan for Azure-deployment
-- `azure-cli-commands.md` - Azure CLI-kommandoer for manuelt oppsett
-- `.github/workflows/azure-deploy.yml` - GitHub Actions workflow for automatisk deployment
+1. Frontend deployes til Azure Storage Account
+2. Backend deployes til Azure App Service
+3. API-nøkler og hemmeligheter lagres i Azure Key Vault
 
-### Kort oversikt over Azure-deployment
+## Bidrag
 
-1. Bygg Docker-images for frontend og backend
-2. Push images til Azure Container Registry
-3. Deploy til Azure App Service
-4. Konfigurer Azure Cosmos DB for MongoDB API
-5. Sett opp miljøvariabler og sikkerhet
+1. Fork repositoriet
+2. Opprett en feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit endringene dine (`git commit -m 'Add some AmazingFeature'`)
+4. Push til branchen (`git push origin feature/AmazingFeature`)
+5. Åpne en Pull Request
 
-For detaljerte instruksjoner, se `azure-deployment-plan.md`.
+## Lisens
 
-## Prosjektstruktur
+Dette prosjektet er lisensiert under MIT-lisensen - se [LICENSE](LICENSE) filen for detaljer.
 
-```
-ki-oversikt/
-├── backend/           # Node.js/Express backend
-│   ├── controllers/   # API-kontrollere
-│   ├── models/        # MongoDB-modeller
-│   ├── routes/        # API-ruter
-│   ├── services/      # Tjenester (inkl. OpenAI-integrasjon)
-│   ├── Dockerfile     # Docker-konfigurasjon for backend
-│   └── server.js      # Hovedapplikasjonsfil
-│
-├── frontend/          # React frontend
-│   ├── public/        # Statiske filer
-│   ├── src/           # Kildekode
-│   │   ├── components/# React-komponenter
-│   │   ├── pages/     # Sidekomponenter
-│   │   ├── services/  # API-tjenester
-│   │   └── App.tsx    # Hovedapplikasjonskomponent
-│   ├── Dockerfile     # Docker-konfigurasjon for frontend
-│   └── nginx.conf     # Nginx-konfigurasjon for produksjon
-│
-├── .github/           # GitHub Actions workflows
-├── docker-compose.yml # Docker Compose-konfigurasjon
-├── azure-deployment-plan.md # Plan for Azure-deployment
-├── azure-cli-commands.md    # Azure CLI-kommandoer
-└── README.md          # Prosjektdokumentasjon
-```
+## Kontakt
 
-## Versjonering
+Ditt Navn - [@ditttwitter](https://twitter.com/ditttwitter) - email@example.com
 
-- **Versjon 1.0** - Grunnleggende funksjonalitet med initiativoversikt og detaljer
-- **Versjon 1.1** - Lagt til Business Canvas og PDF-eksport 
+Prosjekt Link: [https://github.com/ditt-brukernavn/kioversikt](https://github.com/ditt-brukernavn/kioversikt) 

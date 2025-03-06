@@ -1,102 +1,86 @@
 const OpenAI = require('openai');
+const { DefaultAzureCredential } = require('@azure/identity');
+const { SecretClient } = require('@azure/keyvault-secrets');
 require('dotenv').config();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+let openaiClient = null;
 
-// Sjekk om vi er i testmiljø
-if (process.env.NODE_ENV === 'test') {
-  // I testmiljø bruker vi en mock-versjon
-  openai = {
-    chat: {
-      completions: {
-        create: async ({ messages }) => {
-          // Sjekk om dette er en forespørsel om å kaste en feil
-          if (messages.some(m => m.content && m.content.includes('kast_feil'))) {
-            throw new Error('API-feil');
-          }
-          
-          // Sjekk om dette er en forespørsel om oppfølgingsspørsmål
-          if (messages.some(m => m.content && m.content.includes('Initiativ:'))) {
+async function getOpenAIApiKey() {
+  if (process.env.NODE_ENV === 'test') {
+    return 'test-api-key';
+  }
+
+  try {
+    const credential = new DefaultAzureCredential();
+    const vaultName = "kioversikt-kv";
+    const vaultUrl = `https://${vaultName}.vault.azure.net`;
+    const secretClient = new SecretClient(vaultUrl, credential);
+    const secret = await secretClient.getSecret('OpenAIApiKey');
+    return secret.value;
+  } catch (error) {
+    console.error('Feil ved henting av API-nøkkel fra Key Vault:', error);
+    return process.env.OPENAI_API_KEY;
+  }
+}
+
+async function getOpenAIClient() {
+  if (openaiClient) {
+    return openaiClient;
+  }
+
+  if (process.env.NODE_ENV === 'test') {
+    openaiClient = {
+      chat: {
+        completions: {
+          create: async ({ messages }) => {
             return {
               choices: [
                 {
                   message: {
-                    content: JSON.stringify([
-                      'Hva er målet med dette initiativet?',
-                      'Hvem skal være ansvarlig?',
-                      'Når forventer du at dette skal være ferdig?'
-                    ])
+                    content: JSON.stringify({
+                      tittel: 'Test Initiativ',
+                      beskrivelse: 'Dette er et test-initiativ',
+                      maal: 'Teste funksjonalitet',
+                      ansvarlig: 'Test Person',
+                      status: 'Ikke påbegynt',
+                      prioritet: 'Høy'
+                    })
                   }
                 }
               ]
             };
           }
-          
-          // Standard respons
-          return {
-            choices: [
-              {
-                message: {
-                  content: JSON.stringify({
-                    tittel: 'Automatisk generert initiativ',
-                    beskrivelse: 'Dette er et automatisk generert initiativ fra en test',
-                    maal: 'Teste OpenAI-integrasjonen',
-                    ansvarlig: 'Test Bruker',
-                    status: 'Ide',
-                    prioritet: 'Medium'
-                  })
-                }
-              }
-            ]
-          };
-        }
-      }
-    }
-  };
-}
-
-// Opprett OpenAI-klient
-function getOpenAIClient() {
-  // For tester, returner en mock-klient
-  if (process.env.NODE_ENV === 'test') {
-    return {
-      chat: {
-        completions: {
-          create: async () => ({
-            choices: [
-              {
-                message: {
-                  content: JSON.stringify({
-                    tittel: "Test-initiativ",
-                    beskrivelse: "Dette er et test-initiativ",
-                    maal: "Teste funksjonalitet",
-                    ansvarlig: "Testbruker",
-                    status: "Ide",
-                    prioritet: "Medium"
-                  })
-                }
-              }
-            ]
-          })
         }
       }
     };
+  } else {
+    const apiKey = await getOpenAIApiKey();
+    openaiClient = new OpenAI({
+      apiKey: apiKey
+    });
   }
-  
-  // For produksjon, returner en ekte OpenAI-klient
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
+
+  return openaiClient;
 }
+
+console.log('OpenAI Service initialisert');
+console.log('Vault URL:', process.env.VAULT_URL);
+console.log('Miljø:', process.env.NODE_ENV);
 
 /**
  * Prosesserer brukerens dialog og genererer strukturert initiativdata
  * @param {string} message - Brukerens melding
  * @returns {Object} Strukturert initiativdata
  */
-exports.processInitiativDialog = async (message) => {
+async function processInitiativDialog(message) {
+  console.log('processInitiativDialog startet med melding:', message);
+  
+  // Valider input
+  if (!message || typeof message !== 'string' || message.trim().length === 0) {
+    console.error('Ugyldig input mottatt:', message);
+    throw new Error('Feil ved prosessering av dialog: Meldingen kan ikke være tom');
+  }
+  
   try {
     const systemMessage = {
       role: "system",
@@ -117,7 +101,15 @@ exports.processInitiativDialog = async (message) => {
       content: message
     };
 
-    const client = getOpenAIClient();
+    console.log('Henter OpenAI-klient...');
+    const client = await getOpenAIClient();
+    console.log('OpenAI-klient hentet, sender forespørsel...');
+    
+    console.log('Sender chat completion forespørsel med følgende konfigurasjon:');
+    console.log('- Model: gpt-3.5-turbo-0125');
+    console.log('- Temperature: 0.7');
+    console.log('- Max tokens: 1000');
+    
     const response = await client.chat.completions.create({
       model: "gpt-3.5-turbo-0125",
       messages: [systemMessage, userMessage],
@@ -125,18 +117,23 @@ exports.processInitiativDialog = async (message) => {
       max_tokens: 1000
     });
 
+    console.log('Mottok respons fra OpenAI');
     const content = response.choices[0].message.content.trim();
-    console.log("OpenAI response:", content);
+    console.log("OpenAI rå respons:", content);
     
     let parsedData;
     try {
+      console.log('Forsøker å parse JSON-respons...');
       parsedData = JSON.parse(content);
+      console.log('JSON parsing vellykket:', parsedData);
     } catch (error) {
       console.error("JSON parsing error:", error);
+      console.error("Problematisk innhold:", content);
       throw new Error("Kunne ikke tolke svaret fra AI-tjenesten");
     }
     
     // Sikre at alle nødvendige felt er til stede
+    console.log('Validerer og fyller inn manglende felt...');
     const defaultData = {
       tittel: parsedData.tittel || "Nytt KI-initiativ",
       beskrivelse: parsedData.beskrivelse || "Ingen beskrivelse tilgjengelig",
@@ -150,19 +147,21 @@ exports.processInitiativDialog = async (message) => {
       handlinger: []
     };
     
+    console.log('Returnerer ferdig prosessert initiativ:', defaultData);
     return defaultData;
   } catch (error) {
     console.error("Error in processInitiativDialog:", error);
+    console.error("Stack trace:", error.stack);
     throw new Error(`Feil ved prosessering av dialog: ${error.message}`);
   }
-};
+}
 
 /**
  * Genererer oppfølgingsspørsmål basert på initiativdata
  * @param {Object} initiativData - Data om initiativet
  * @returns {Array} Liste med oppfølgingsspørsmål
  */
-exports.generateFollowUpQuestions = async (initiativData) => {
+async function generateFollowUpQuestions(initiativData) {
   try {
     // Opprett en systemmelding for oppfølgingsspørsmål
     const followUpSystemMessage = `
@@ -171,8 +170,12 @@ exports.generateFollowUpQuestions = async (initiativData) => {
     Returner BARE en JSON-array med spørsmålene, uten noen annen tekst.
     `;
     
+    console.log('Henter OpenAI-klient for oppfølgingsspørsmål...');
+    const client = await getOpenAIClient();
+    console.log('OpenAI-klient hentet, sender forespørsel...');
+    
     // Opprett en samtale med systemmelding og initiativdata
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: followUpSystemMessage },
@@ -226,7 +229,7 @@ exports.generateFollowUpQuestions = async (initiativData) => {
       'Når forventer du at dette skal være ferdig?'
     ];
   }
-};
+}
 
 /**
  * Fortsetter en eksisterende dialog for å samle inn mer informasjon
@@ -234,7 +237,7 @@ exports.generateFollowUpQuestions = async (initiativData) => {
  * @param {string} newMessage - Brukerens nye melding
  * @returns {Object} Oppdatert initiativdata
  */
-exports.continueInitiativDialog = async (messages, newMessage) => {
+async function continueInitiativDialog(messages, newMessage) {
   try {
     // Systemmelding som definerer hvordan GPT skal oppføre seg
     const systemMessage = `
@@ -251,6 +254,10 @@ exports.continueInitiativDialog = async (messages, newMessage) => {
     Returner BARE et JSON-objekt med disse feltene, uten noen annen tekst.
     `;
     
+    console.log('Henter OpenAI-klient for fortsettelse av dialog...');
+    const client = await getOpenAIClient();
+    console.log('OpenAI-klient hentet, sender forespørsel...');
+    
     // Opprett en samtale med systemmelding og tidligere meldinger
     const chatMessages = [
       { role: "system", content: systemMessage },
@@ -258,7 +265,7 @@ exports.continueInitiativDialog = async (messages, newMessage) => {
       { role: "user", content: newMessage }
     ];
     
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: chatMessages,
       temperature: 0.7,
@@ -299,14 +306,14 @@ exports.continueInitiativDialog = async (messages, newMessage) => {
     console.error('OpenAI API-feil:', error);
     throw new Error('Feil ved prosessering av dialog: ' + error.message);
   }
-};
+}
 
 /**
  * Analyserer Excel-data og konverterer det til strukturerte initiativ-objekter
  * @param {string} prompt - Prompt med Excel-data for analyse
  * @returns {Array} Array med strukturerte initiativ-objekter
  */
-exports.analyzeExcelData = async (prompt) => {
+async function analyzeExcelData(prompt) {
   try {
     const systemMessage = `
       Du er en ekspert på å analysere Excel-data og konvertere dem til strukturerte JSON-objekter.
@@ -338,7 +345,7 @@ exports.analyzeExcelData = async (prompt) => {
 
     const userMessage = prompt;
 
-    const response = await openai.chat.completions.create({
+    const response = await openaiClient.chat.completions.create({
       model: 'gpt-3.5-turbo-0125',
       messages: [
         { role: 'system', content: systemMessage },
@@ -448,7 +455,7 @@ exports.analyzeExcelData = async (prompt) => {
     console.error('Feil ved OpenAI Excel-analyse:', error);
     throw new Error('Kunne ikke analysere Excel-dataene. Prøv igjen senere.');
   }
-};
+}
 
 /**
  * Sjekker om en streng er en gyldig dato i formatet YYYY-MM-DD
@@ -472,7 +479,10 @@ function isValidDateString(dateString) {
 
 async function analyzeText(text) {
   try {
-    const completion = await openai.chat.completions.create({
+    console.log('Starter tekstanalyse med OpenAI...');
+    console.log('API-nøkkel er tilgjengelig:', !!process.env.OPENAI_API_KEY);
+    
+    const completion = await openaiClient.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
@@ -494,21 +504,33 @@ async function analyzeText(text) {
       response_format: { type: "json_object" }
     });
 
+    console.log('OpenAI-respons mottatt');
     const response = completion.choices[0].message.content;
-    console.log('OpenAI response:', response);
+    console.log('OpenAI-respons:', response);
     
     try {
-      return JSON.parse(response);
+      const parsedResponse = JSON.parse(response);
+      console.log('Vellykket parsing av JSON-respons');
+      return parsedResponse;
     } catch (parseError) {
       console.error('Feil ved parsing av OpenAI-respons:', parseError);
-      throw new Error('Kunne ikke tolke AI-responsen');
+      console.error('Rå respons:', response);
+      throw new Error('Kunne ikke tolke AI-responsen som JSON');
     }
   } catch (error) {
     console.error('Feil ved analyse av tekst:', error);
-    throw error;
+    if (error.response) {
+      console.error('OpenAI API feilrespons:', error.response.data);
+    }
+    throw new Error(error.message || 'Kunne ikke analysere teksten med OpenAI');
   }
 }
 
 module.exports = {
-  analyzeText
+  processInitiativDialog,
+  generateFollowUpQuestions,
+  continueInitiativDialog,
+  analyzeExcelData,
+  analyzeText,
+  getOpenAIClient
 }; 

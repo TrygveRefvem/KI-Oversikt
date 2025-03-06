@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '/api/initiativer';
+const API_URL = 'https://kioversikt-api.azurewebsites.net/api/initiativer';
 
 /**
  * Henter alle initiativer
@@ -10,9 +10,9 @@ export const hentAlleInitiativer = async () => {
   try {
     const response = await axios.get(API_URL);
     return response.data.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Feil ved henting av initiativer:', error);
-    throw error;
+    throw new Error(error.response?.data?.message || 'Kunne ikke hente initiativer');
   }
 };
 
@@ -54,10 +54,13 @@ export const opprettInitiativ = async (initiativData: any) => {
 export const opprettInitiativFraDialog = async (message: string) => {
   try {
     const response = await axios.post(`${API_URL}/dialog`, { message });
-    return response.data;
-  } catch (error) {
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Noe gikk galt');
+    }
+    return response.data.data;
+  } catch (error: any) {
     console.error('Feil ved oppretting av initiativ fra dialog:', error);
-    throw error;
+    throw new Error(error.response?.data?.message || 'Kunne ikke opprette initiativ. Vennligst prøv igjen.');
   }
 };
 

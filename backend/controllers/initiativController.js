@@ -105,27 +105,32 @@ async function generateInitiativId() {
 // Dialogbasert oppretting av initiativ
 exports.createInitiativFromDialog = async (req, res, next) => {
   try {
+    console.log('Mottok forespørsel om å opprette initiativ fra dialog');
     const { message } = req.body;
     
     if (!message) {
+      console.log('Ingen melding mottatt i forespørselen');
       return res.status(400).json({
         success: false,
         message: 'Meldingsinnhold er påkrevd'
       });
     }
 
+    console.log('Starter analyse av tekst...');
     // Analyser teksten med OpenAI
     let analysertData;
     try {
       analysertData = await analyzeText(message);
+      console.log('Tekstanalyse fullført:', analysertData);
     } catch (error) {
       console.error('Feil ved analyse av tekst:', error);
       return res.status(500).json({
         success: false,
-        message: 'Kunne ikke analysere teksten. Vennligst prøv igjen.'
+        message: error.message || 'Kunne ikke analysere teksten. Vennligst prøv igjen.'
       });
     }
     
+    console.log('Oppretter nytt initiativ...');
     // Opprett et nytt initiativ med den analyserte dataen
     const initiativ = new Initiativ({
       initiativId: await generateInitiativId(),
@@ -135,7 +140,9 @@ exports.createInitiativFromDialog = async (req, res, next) => {
       vedlegg: []
     });
 
+    console.log('Lagrer initiativ...');
     await initiativ.save();
+    console.log('Initiativ lagret:', initiativ);
 
     res.status(201).json({
       success: true,
@@ -145,7 +152,7 @@ exports.createInitiativFromDialog = async (req, res, next) => {
     console.error('Feil ved oppretting av initiativ:', error);
     res.status(500).json({
       success: false,
-      message: 'Kunne ikke opprette initiativet. Vennligst prøv igjen.'
+      message: error.message || 'Kunne ikke opprette initiativet. Vennligst prøv igjen.'
     });
   }
 };
