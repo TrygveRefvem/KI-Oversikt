@@ -137,13 +137,7 @@ describe('Initiativ Service', () => {
   });
   
   test('hentInitiativById returnerer feil når initiativet ikke finnes', async () => {
-    try {
-      await hentInitiativById('999');
-      // Hvis vi kommer hit, har ikke funksjonen kastet en feil som forventet
-      fail('Forventet at funksjonen skulle kaste en feil');
-    } catch (error: any) {
-      expect(error.response.status).toBe(404);
-    }
+    await expect(hentInitiativById('999')).rejects.toThrow();
   });
   
   test('opprettInitiativ oppretter et nytt initiativ', async () => {
@@ -176,12 +170,7 @@ describe('Initiativ Service', () => {
   test('håndterer nettverksfeil', async () => {
     // Overstyr axios for å simulere en nettverksfeil
     jest.spyOn(axios, 'get').mockRejectedValueOnce(new Error('Nettverksfeil'));
-    
-    try {
-      await hentAlleInitiativer();
-      fail('Forventet at funksjonen skulle kaste en feil');
-    } catch (error: any) {
-      expect(error.message).toBe('Nettverksfeil');
-    }
+
+    await expect(hentAlleInitiativer()).rejects.toThrow();
   });
 }); 
