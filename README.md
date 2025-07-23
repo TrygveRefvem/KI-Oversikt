@@ -97,7 +97,7 @@ npm test
 
 Applikasjonen er konfigurert for deployment til Azure:
 
-1. Frontend deployes til Azure Storage Account
+1. Frontend deployes til Azure App Service
 2. Backend deployes til Azure App Service
 3. API-nøkler og hemmeligheter lagres i Azure Key Vault
 
