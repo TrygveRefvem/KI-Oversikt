@@ -345,7 +345,15 @@ async function analyzeExcelData(prompt) {
 
     const userMessage = prompt;
 
-    const response = await openaiClient.chat.completions.create({
+    let client;
+    try {
+      client = await getOpenAIClient();
+    } catch (initError) {
+      console.error('Failed to initialize OpenAI client:', initError);
+      throw new Error('Kunne ikke initialisere OpenAI-klient');
+    }
+
+    const response = await client.chat.completions.create({
       model: 'gpt-3.5-turbo-0125',
       messages: [
         { role: 'system', content: systemMessage },
@@ -482,7 +490,15 @@ async function analyzeText(text) {
     console.log('Starter tekstanalyse med OpenAI...');
     console.log('API-nøkkel er tilgjengelig:', !!process.env.OPENAI_API_KEY);
     
-    const completion = await openaiClient.chat.completions.create({
+    let client;
+    try {
+      client = await getOpenAIClient();
+    } catch (initError) {
+      console.error('Failed to initialize OpenAI client:', initError);
+      throw new Error('Kunne ikke initialisere OpenAI-klient');
+    }
+
+    const completion = await client.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
